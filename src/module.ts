@@ -68,6 +68,7 @@ import { ThyFullscreenModule } from 'ngx-tethys/fullscreen';
 import { ThyGuiderModule } from 'ngx-tethys/guider';
 import { ThyResizableModule } from 'ngx-tethys/resizable';
 import { ThyRateModule } from 'ngx-tethys/rate';
+import { ThyImageModule } from 'ngx-tethys/image';
 
 const IMPORT_EXPORT_MODULES = [
     ThyLayoutModule,
@@ -136,7 +137,8 @@ const IMPORT_EXPORT_MODULES = [
     ThyFullscreenModule,
     ThyGuiderModule,
     ThyResizableModule,
-    ThyRateModule
+    ThyRateModule,
+    ThyImageModule
 ];
 
 /**

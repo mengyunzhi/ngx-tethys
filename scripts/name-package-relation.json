@@ -316,6 +316,7 @@
   "ThyIconRegistry": "icon",
   "ThyIconComponent": "icon",
   "ThyIconModule": "icon",
+  "ThyImageModule": "image",
   "InputGroupSize": "input",
   "ThyInputGroupComponent": "input",
   "InputSearchTheme": "input",
