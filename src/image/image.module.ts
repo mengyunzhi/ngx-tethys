@@ -2,17 +2,20 @@ import { OverlayModule } from '@angular/cdk/overlay';
 import { PortalModule } from '@angular/cdk/portal';
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
+import { FormsModule } from '@angular/forms';
+import { ThyButtonModule } from 'ngx-tethys/button';
 import { ThyIconModule } from 'ngx-tethys/icon';
-import { ThyImagePreviewComponent } from './image-preview.component';
-import { THY_IMAGE_CONFIG_PROVIDER } from './image.class';
+import { ThySharedModule } from 'ngx-tethys/shared';
+import { ThyImageContainerComponent } from './image-container.component';
+import { THY_IMAGE_DEFAULT_OPTIONS_PROVIDER } from './image.config';
 import { ThyImageDirective } from './image.directive';
-import { ThyImageService } from './image.service';
+import { ThyImage } from './image.service';
 
 @NgModule({
-    imports: [OverlayModule, CommonModule, PortalModule, ThyIconModule],
-    exports: [ThyImageDirective, ThyImagePreviewComponent],
-    declarations: [ThyImageDirective, ThyImagePreviewComponent],
-    providers: [THY_IMAGE_CONFIG_PROVIDER, ThyImageService],
-    entryComponents: [ThyImagePreviewComponent]
+    declarations: [ThyImageContainerComponent, ThyImageDirective],
+    imports: [CommonModule, ThySharedModule, PortalModule, OverlayModule, ThyIconModule, ThyButtonModule, FormsModule],
+    providers: [ThyImage, THY_IMAGE_DEFAULT_OPTIONS_PROVIDER],
+    entryComponents: [ThyImageContainerComponent],
+    exports: [ThyImageContainerComponent, ThyImageDirective]
 })
 export class ThyImageModule {}

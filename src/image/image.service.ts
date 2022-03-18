@@ -1,62 +1,105 @@
+import { Inject, Injectable, Injector, OnDestroy, Optional, StaticProvider, TemplateRef } from '@angular/core';
+import { ThyAbstractOverlayRef, ThyAbstractOverlayService, ThyClickPositioner } from 'ngx-tethys/core';
+import { ThyImageContainerComponent } from './image-container.component';
 import { Overlay, OverlayConfig, OverlayRef } from '@angular/cdk/overlay';
-import { Inject, Injectable, Injector, Optional } from '@angular/core';
-import { ThyImageConfig, THY_IMAGE_CONFIG } from './image.class';
-import { ThyImage, ThyImageOptions } from './image-options';
-import { ThyImagePreviewRef } from './image-preview-ref';
-import { IMAGE_PREVIEW_MASK_CLASS_NAME } from './image-config';
-import { ThyImagePreviewComponent } from './image-preview.component';
-import { ComponentPortal } from '@angular/cdk/portal';
+import { ComponentPortal, ComponentType } from '@angular/cdk/portal';
+import { of } from 'rxjs';
+import { Directionality } from '@angular/cdk/bidi';
+import { ThyImageRef, ThyInternalImageRef } from './image-ref';
+import { ThyImageConfig, ThyImageInfo } from './image.config';
+import { THY_IMAGE_DEFAULT_OPTIONS } from '.';
+import { imageAbstractOverlayOptions } from './image.options';
 
 @Injectable()
-export class ThyImageService {
-    constructor(
-        private overlay: Overlay,
-        @Optional() @Inject(THY_IMAGE_CONFIG) private defaultConfig: ThyImageConfig,
-        private injector: Injector
-    ) {}
-
-    preview(images: ThyImage[], config?: ThyImageOptions): ThyImagePreviewRef {
-        console.log(images, 'images');
-        return this.showImage(images, config);
+export class ThyImage extends ThyAbstractOverlayService<ThyImageConfig, ThyImageContainerComponent> implements OnDestroy {
+    protected buildOverlayConfig(config: ThyImageConfig<any>): OverlayConfig {
+        // const size = config.size || ThyDialogSizes.md;
+        const size = 'md';
+        console.log(config, 'image config');
+        const overlayConfig = this.buildBaseOverlayConfig(config);
+        overlayConfig.positionStrategy = this.overlay.position().global();
+        console.log(this.overlay.position(), this.overlay.position().global(), 'overlay position');
+        overlayConfig.scrollStrategy = config.scrollStrategy || this.overlay.scrollStrategies.block();
+        console.log(overlayConfig, 'image overlay config');
+        return overlayConfig;
     }
 
-    private showImage(images: ThyImage[], config?: ThyImageOptions): ThyImagePreviewRef {
-        const configMerged = { ...new ThyImageOptions(), ...(config ?? {}) };
-        const overlayRef = this.createOverlay(configMerged);
-        const previewComponent = this.attachPreviewComponent(overlayRef, configMerged);
-        previewComponent.setImages(images);
-        const previewRef = new ThyImagePreviewRef(previewComponent, configMerged, overlayRef);
-
-        previewComponent.previewRef = previewRef;
-        return previewRef;
-    }
-
-    private attachPreviewComponent(overlayRef: OverlayRef, config: ThyImageOptions): ThyImagePreviewComponent {
+    protected attachOverlayContainer(overlay: OverlayRef, config: ThyImageConfig<any>): ThyImageContainerComponent {
+        const userInjector = config && config.viewContainerRef && config.viewContainerRef.injector;
         const injector = Injector.create({
-            parent: this.injector,
-            providers: [
-                { provide: OverlayRef, useValue: overlayRef },
-                { provide: ThyImageOptions, useValue: config }
-            ]
+            parent: userInjector || this.injector,
+            providers: [{ provide: ThyImageConfig, useValue: config }]
         });
-
-        const containerPortal = new ComponentPortal(ThyImagePreviewComponent, null, injector);
-        const containerRef = overlayRef.attach(containerPortal);
+        const containerPortal = new ComponentPortal(ThyImageContainerComponent, config.viewContainerRef, injector);
+        const containerRef = overlay.attach<ThyImageContainerComponent>(containerPortal);
 
         return containerRef.instance;
     }
 
-    private createOverlay(config: ThyImageOptions): OverlayRef {
-        const defaultConfig = this.defaultConfig || {};
-        const overlayConfig = new OverlayConfig({
-            hasBackdrop: true,
-            scrollStrategy: this.overlay.scrollStrategies.block(),
-            positionStrategy: this.overlay.position().global(),
-            disposeOnNavigation: true,
-            backdropClass: IMAGE_PREVIEW_MASK_CLASS_NAME,
-            direction: 'ltr'
-        });
+    protected createAbstractOverlayRef<T, TResult>(
+        overlayRef: OverlayRef,
+        containerInstance: ThyImageContainerComponent,
+        config: ThyImageConfig<any>
+    ): ThyAbstractOverlayRef<T, ThyImageContainerComponent, TResult> {
+        return new ThyInternalImageRef(overlayRef, containerInstance, config);
+    }
 
-        return this.overlay.create(overlayConfig);
+    protected createInjector<T>(config: ThyImageConfig, dialogRef: ThyImageRef<T>, dialogContainer: ThyImageContainerComponent): Injector {
+        const userInjector = config && config.viewContainerRef && config.viewContainerRef.injector;
+
+        const injectionTokens: StaticProvider[] = [
+            { provide: ThyImageContainerComponent, useValue: dialogContainer },
+            {
+                provide: ThyImageRef,
+                useValue: dialogRef
+            }
+        ];
+
+        if (config.direction && (!userInjector || !userInjector.get<Directionality | null>(Directionality, null))) {
+            injectionTokens.push({
+                provide: Directionality,
+                useValue: {
+                    value: config.direction,
+                    change: of()
+                }
+            });
+        }
+
+        return Injector.create({ parent: userInjector || this.injector, providers: injectionTokens });
+    }
+
+    constructor(
+        overlay: Overlay,
+        injector: Injector,
+        @Optional()
+        @Inject(THY_IMAGE_DEFAULT_OPTIONS)
+        defaultConfig: ThyImageConfig,
+        clickPositioner: ThyClickPositioner
+    ) {
+        super(imageAbstractOverlayOptions, overlay, injector, defaultConfig);
+        clickPositioner.initialize();
+    }
+
+    open<T, TData = unknown, TResult = unknown>(
+        componentOrTemplateRef: ComponentType<T> | TemplateRef<T>,
+        config?: ThyImageConfig<TData>,
+        imageConfig?: ThyImageInfo
+    ): ThyImageRef<T, TResult> {
+        const imageRef = this.openOverlay(componentOrTemplateRef, config);
+        const imageRefInternal = imageRef as ThyInternalImageRef<T, TResult>;
+        // const imageContainer = this.attachOverlayContainer(imageRef, config);
+
+        console.log(imageRef.containerInstance.config, 'image ref config');
+
+        imageRefInternal.updateSizeAndPosition(
+            imageRef.containerInstance.config.width,
+            imageRef.containerInstance.config.height,
+            imageRef.containerInstance.config.position
+        );
+        return imageRef as ThyImageRef<T, TResult>;
+    }
+
+    ngOnDestroy(): void {
+        this.dispose();
     }
 }

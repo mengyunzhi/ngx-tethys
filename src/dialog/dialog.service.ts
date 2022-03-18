@@ -16,10 +16,13 @@ import { dialogAbstractOverlayOptions } from './dialog.options';
 @Injectable()
 export class ThyDialog extends ThyAbstractOverlayService<ThyDialogConfig, ThyDialogContainerComponent> implements OnDestroy {
     protected buildOverlayConfig(config: ThyDialogConfig<any>): OverlayConfig {
+        console.log(config, 'dialog config');
         const size = config.size || ThyDialogSizes.md;
         const overlayConfig = this.buildBaseOverlayConfig(config, [`dialog-${size}`]);
         overlayConfig.positionStrategy = this.overlay.position().global();
+        console.log(this.overlay.position(), this.overlay.position().global(), 'overlay position');
         overlayConfig.scrollStrategy = config.scrollStrategy || this.overlay.scrollStrategies.block();
+        console.log(overlayConfig, 'dialog overlay config');
         return overlayConfig;
     }
 
@@ -90,6 +93,7 @@ export class ThyDialog extends ThyAbstractOverlayService<ThyDialogConfig, ThyDia
     ): ThyDialogRef<T, TResult> {
         const dialogRef = this.openOverlay(componentOrTemplateRef, config);
         const dialogRefInternal = dialogRef as ThyInternalDialogRef<T, TResult>;
+        console.log(dialogRef.containerInstance.config, 'dialog ref config');
         dialogRefInternal.updateSizeAndPosition(
             dialogRef.containerInstance.config.width,
             dialogRef.containerInstance.config.height,

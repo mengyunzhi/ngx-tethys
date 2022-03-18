@@ -1,25 +1,51 @@
+import { FocusMonitor } from '@angular/cdk/a11y';
+import { OverlayRef } from '@angular/cdk/overlay';
+import { Platform } from '@angular/cdk/platform';
+import { ComponentPortal, ComponentType } from '@angular/cdk/portal';
 import { DOCUMENT } from '@angular/common';
-import { Directive, ElementRef, Inject, Input, OnChanges, OnInit, SimpleChanges } from '@angular/core';
-import { ThyImageConfig, THY_IMAGE_CONFIG } from './image.class';
-import { ThyImageService } from './image.service';
+import { createComponentType } from '@angular/compiler/src/render3/view/compiler';
+import {
+    Directive,
+    ElementRef,
+    Inject,
+    Input,
+    NgZone,
+    OnChanges,
+    OnDestroy,
+    OnInit,
+    SimpleChanges,
+    TemplateRef,
+    ViewContainerRef
+} from '@angular/core';
+import { ThyOverlayDirectiveBase, ThyPlacement } from 'ngx-tethys/core';
+import { ThyImageContainerComponent } from './image-container.component';
+import { ThyImageRef } from './image-ref';
+import { ThyImageConfig } from './image.config';
+import { ThyImage } from './image.service';
 
 export type ImageStatusType = 'error' | 'loading' | 'normal';
 
 @Directive({
-    selector: 'img[thy-image]',
-    exportAs: 'thyImage',
-    host: {
-        '(click)': 'onPreview()'
-    }
+    selector: 'img[thyImage]',
+    exportAs: 'thyImage'
+    /* host: {
+        '(click)': 'show()'
+    } */
 })
-export class ThyImageDirective implements OnInit, OnChanges {
+export class ThyImageDirective extends ThyOverlayDirectiveBase implements OnInit, OnChanges, OnDestroy {
     @Input() thySrc = '';
+
+    @Input('thyImageContent') content: ComponentType<any> | TemplateRef<any>;
 
     @Input() thyFallback: string | null = null;
 
     @Input() thyLoadingSrc: string | null = null;
 
-    @Input() thyDisablePreview: boolean = false;
+    @Input() thyDisablePreview = false;
+
+    @Input() thyPlacement: ThyPlacement;
+
+    @Input() thyConfig: ThyImageConfig;
 
     backLoadImage!: HTMLImageElement;
 
@@ -29,74 +55,84 @@ export class ThyImageDirective implements OnInit, OnChanges {
         return !this.thyDisablePreview && this.status !== 'error';
     }
 
+    private imageRef: ThyImageRef<any>;
+
     constructor(
-        private elementRef: ElementRef,
-        @Inject(THY_IMAGE_CONFIG) private imageConfig: ThyImageConfig,
-        @Inject(DOCUMENT) private document: any,
-        private thyImageService: ThyImageService
+        elementRef: ElementRef,
+        platform: Platform,
+        focusMonitor: FocusMonitor,
+        ngZone: NgZone,
+        private image: ThyImage,
+        private viewContainerRef: ViewContainerRef
     ) {
-        if (!this.thyFallback) {
-            this.thyFallback = this.imageConfig.thyFallback || null;
-        }
-        if (!this.thyLoadingSrc) {
-            this.thyLoadingSrc = this.imageConfig.thyLoadingSrc || null;
-        }
+        super(elementRef, platform, focusMonitor, ngZone);
     }
 
     ngOnInit() {
-        this.backLoad();
-        console.log(this.thySrc, 'src');
-        console.log(this.thyFallback, 'fallback');
-        console.log(this.thyLoadingSrc, 'loading src');
+        console.log(11111, this.thyLoadingSrc, this.thySrc, 'image component');
+        this.initialize();
+        this.elementRef.nativeElement.src = this.thySrc;
     }
 
     ngOnChanges(changes: SimpleChanges) {
         const { thySrc } = changes;
         if (thySrc) {
-            this.getElement().nativeElement.src = thySrc.currentValue;
-            this.backLoad();
+            /* this.getElement().nativeElement.src = thySrc.currentValue;
+            this.backLoad(); */
         }
     }
 
-    getElement(): ElementRef<HTMLImageElement> {
-        return this.elementRef;
+    createOverlay(): OverlayRef {
+        const config = Object.assign(
+            {
+                origin: this.elementRef.nativeElement,
+                hasBackdrop: true,
+                viewContainerRef: this.viewContainerRef
+            },
+            this.thyConfig
+        );
+        console.log(this.elementRef.nativeElement, this.elementRef.nativeElement.src, 'src');
+        this.imageRef = this.image.open(this.content, config);
+        console.log(config, 'image directive create overlay config');
+        console.log(this.imageRef, 'image directive create overlay ref');
+        this.imageRef.afterClosed().subscribe(() => {
+            console.log('thy-image 马上要close啦');
+        });
+        return this.imageRef.getOverlayRef();
     }
 
-    // 底部加载，实现fallback & loadingSrc
-    private backLoad() {
-        this.backLoadImage = this.document.createElement('img');
-        this.backLoadImage.src = this.thySrc;
-        this.status = 'loading';
-
-        if (this.backLoadImage.complete) {
-            this.status = 'normal';
-            this.getElement().nativeElement.src = this.thySrc;
-        } else {
-            if (this.thyLoadingSrc) {
-                this.getElement().nativeElement.src = this.thyLoadingSrc;
-            } else {
-                this.getElement().nativeElement.src = this.thySrc;
-            }
-
-            this.backLoadImage.onload = () => {
-                this.status = 'normal';
-                this.getElement().nativeElement.src = this.thySrc;
-            };
-
-            this.backLoadImage.onerror = () => {
-                this.status = 'error';
-                if (this.thyFallback) {
-                    this.getElement().nativeElement.src = this.thyFallback;
-                }
-            };
+    show(delay: number = 0) {
+        if (this.hideTimeoutId) {
+            clearTimeout(this.hideTimeoutId);
+            this.hideTimeoutId = null;
         }
-    }
 
-    onPreview() {
-        if (!this.previewable) {
+        if (this.disabled || (this.overlayRef && this.overlayRef.hasAttached())) {
             return;
         }
-        const previewImages = [{ src: this.thySrc }];
-        this.thyImageService.preview(previewImages);
+
+        this.showTimeoutId = setTimeout(() => {
+            const overlayRef = this.createOverlay();
+            this.overlayRef = overlayRef;
+            this.showTimeoutId = null;
+        }, delay);
+    }
+
+    hide(delay: number = 0) {
+        if (this.showTimeoutId) {
+            clearTimeout(this.showTimeoutId);
+            this.showTimeoutId = null;
+        }
+
+        this.hideTimeoutId = setTimeout(() => {
+            if (this.imageRef) {
+                this.imageRef.close();
+            }
+            this.hideTimeoutId = null;
+        }, delay);
+    }
+
+    ngOnDestroy(): void {
+        this.dispose();
     }
 }

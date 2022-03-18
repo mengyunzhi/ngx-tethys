@@ -1,16 +1,14 @@
+import { ThyImageContainerComponent } from './image-container.component';
 import { ThyAbstractInternalOverlayRef, ThyAbstractOverlayPosition, ThyAbstractOverlayRef } from 'ngx-tethys/core';
-
 import { GlobalPositionStrategy, OverlayRef } from '@angular/cdk/overlay';
+import { ThyImageConfig } from './image.config';
+import { imageAbstractOverlayOptions } from './image.options';
 
-import { ThyDialogContainerComponent } from './dialog-container.component';
-import { ThyDialogConfig } from './dialog.config';
-import { dialogAbstractOverlayOptions } from './dialog.options';
+export abstract class ThyImageRef<T, TResult = unknown> extends ThyAbstractOverlayRef<T, ThyImageContainerComponent, TResult> {}
 
-export abstract class ThyDialogRef<T, TResult = unknown> extends ThyAbstractOverlayRef<T, ThyDialogContainerComponent, TResult> {}
-
-export class ThyInternalDialogRef<T, TResult = unknown> extends ThyAbstractInternalOverlayRef<T, ThyDialogContainerComponent, TResult> {
-    constructor(overlayRef: OverlayRef, containerInstance: ThyDialogContainerComponent, config: ThyDialogConfig<T>) {
-        super(dialogAbstractOverlayOptions, overlayRef, containerInstance, config);
+export class ThyInternalImageRef<T, TResult = unknown> extends ThyAbstractInternalOverlayRef<T, ThyImageContainerComponent, TResult> {
+    constructor(overlayRef: OverlayRef, containerInstance: ThyImageContainerComponent, config: ThyImageConfig<T>) {
+        super(imageAbstractOverlayOptions, overlayRef, containerInstance, config);
     }
 
     /**
