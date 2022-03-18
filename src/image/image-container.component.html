@@ -1,4 +1,10 @@
-<div style="width: 400px; height: 400px; background: #fff;">
+<div>
   <ng-template cdkPortalOutlet></ng-template>
-  <div>image-container</div>
+  <img
+    [src]="image.src"
+    [alt]="image.alt || ''"
+    [width]="image.width || 'auto'"
+    [height]="image.height || 'auto'"
+    *ngFor="let image of images"
+  />
 </div>

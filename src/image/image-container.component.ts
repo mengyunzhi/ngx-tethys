@@ -15,7 +15,7 @@ import { ThyAbstractOverlayContainer, ThyClickPositioner } from 'ngx-tethys/core
 import { thyImageAnimations } from './image-animations';
 import { AnimationEvent } from '@angular/animations';
 import { DOCUMENT } from '@angular/common';
-import { ThyImageConfig } from './image.config';
+import { ThyImageConfig, ThyImageInfo } from './image.config';
 import { filter } from 'rxjs/operators';
 import { imageAbstractOverlayOptions } from './image.options';
 
@@ -53,6 +53,8 @@ export class ThyImageContainerComponent extends ThyAbstractOverlayContainer impl
 
     /** Emits when an animation state changes. */
     animationStateChanged = new EventEmitter<AnimationEvent>();
+
+    images: ThyImageInfo[];
 
     /* private elementFocusedBeforeDialogWasOpened: HTMLElement | null = null;
 

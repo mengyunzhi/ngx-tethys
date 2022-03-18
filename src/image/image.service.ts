@@ -17,7 +17,11 @@ export class ThyImage extends ThyAbstractOverlayService<ThyImageConfig, ThyImage
         const size = 'md';
         console.log(config, 'image config');
         const overlayConfig = this.buildBaseOverlayConfig(config);
-        overlayConfig.positionStrategy = this.overlay.position().global();
+        overlayConfig.positionStrategy = this.overlay
+            .position()
+            .global()
+            .centerHorizontally()
+            .centerVertically();
         console.log(this.overlay.position(), this.overlay.position().global(), 'overlay position');
         overlayConfig.scrollStrategy = config.scrollStrategy || this.overlay.scrollStrategies.block();
         console.log(overlayConfig, 'image overlay config');
@@ -80,10 +84,16 @@ export class ThyImage extends ThyAbstractOverlayService<ThyImageConfig, ThyImage
         clickPositioner.initialize();
     }
 
+    preview<T, TData = unknown, TResult = unknown>(images: ThyImageInfo[], config?: ThyImageConfig<TData>) {
+        const imageRef = this.openOverlay(ThyImageContainerComponent, config);
+        imageRef.componentInstance.images = images;
+        console.log(imageRef, 'ref from preview');
+        return imageRef;
+    }
+
     open<T, TData = unknown, TResult = unknown>(
         componentOrTemplateRef: ComponentType<T> | TemplateRef<T>,
-        config?: ThyImageConfig<TData>,
-        imageConfig?: ThyImageInfo
+        config?: ThyImageConfig<TData>
     ): ThyImageRef<T, TResult> {
         const imageRef = this.openOverlay(componentOrTemplateRef, config);
         const imageRefInternal = imageRef as ThyInternalImageRef<T, TResult>;

@@ -19,6 +19,7 @@ import {
 } from '@angular/core';
 import { ThyOverlayDirectiveBase, ThyPlacement } from 'ngx-tethys/core';
 import { ThyImageContainerComponent } from './image-container.component';
+import { ThyImageContentComponent } from './image-content.component';
 import { ThyImageRef } from './image-ref';
 import { ThyImageConfig } from './image.config';
 import { ThyImage } from './image.service';
@@ -33,7 +34,7 @@ export type ImageStatusType = 'error' | 'loading' | 'normal';
     } */
 })
 export class ThyImageDirective extends ThyOverlayDirectiveBase implements OnInit, OnChanges, OnDestroy {
-    @Input() thySrc = '';
+    @Input() src = '';
 
     @Input('thyImageContent') content: ComponentType<any> | TemplateRef<any>;
 
@@ -53,6 +54,10 @@ export class ThyImageDirective extends ThyOverlayDirectiveBase implements OnInit
 
     get previewable(): boolean {
         return !this.thyDisablePreview && this.status !== 'error';
+    }
+
+    get thySrc(): string {
+        return this.src;
     }
 
     private imageRef: ThyImageRef<any>;
@@ -92,7 +97,18 @@ export class ThyImageDirective extends ThyOverlayDirectiveBase implements OnInit
             this.thyConfig
         );
         console.log(this.elementRef.nativeElement, this.elementRef.nativeElement.src, 'src');
-        this.imageRef = this.image.open(this.content, config);
+        const imageElement = this.elementRef.nativeElement;
+        this.imageRef = this.image.preview(
+            [
+                {
+                    src: imageElement.src,
+                    alt: imageElement.alt || '',
+                    width: imageElement.width,
+                    height: imageElement.height
+                }
+            ],
+            config
+        );
         console.log(config, 'image directive create overlay config');
         console.log(this.imageRef, 'image directive create overlay ref');
         this.imageRef.afterClosed().subscribe(() => {
