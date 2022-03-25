@@ -150,7 +150,7 @@ describe('thy-cascader', () => {
         });
 
         it('should display', () => {
-            const el = debugElement.query(By.css('.thy-cascader-picker-label'));
+            const el = debugElement.query(By.css('.select-control-rendered'));
             expect(el).toBeTruthy();
         });
         it('should clear', async done => {
@@ -161,7 +161,7 @@ describe('thy-cascader', () => {
                 expect(e.length).toBe(0);
                 done();
             });
-            const el = debugElement.query(By.css('.thy-cascader-picker-clear'));
+            const el = debugElement.query(By.css('.select-control-clear'));
             dispatchFakeEvent(el.nativeElement, 'click', true);
             expect(el).toBeTruthy();
             fixture.detectChanges();
@@ -169,9 +169,9 @@ describe('thy-cascader', () => {
         it('should change placeholder', () => {
             component.curVal = null;
             component.placeholder = 'test-change';
-            const el = debugElement.query(By.css('input'));
+            const placeholder = debugElement.query(By.css('.text-placeholder'));
             fixture.detectChanges();
-            expect(el.attributes.placeholder).toBe(component.placeholder);
+            expect(placeholder.nativeElement.innerText).toBe(component.placeholder);
         });
         it('should click open', () => {
             dispatchFakeEvent(debugElement.query(By.css('input')).nativeElement, 'click', true);

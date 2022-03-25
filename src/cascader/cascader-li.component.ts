@@ -14,6 +14,8 @@ import { CascaderOption } from './types';
 export class ThyCascaderOptionComponent implements OnInit {
     @Input() option: CascaderOption;
 
+    @Input() multiple: boolean;
+
     @HostBinding('class.thy-cascader-menu-item') item = true;
 
     @HostBinding('class.thy-cascader-menu-item-active')
@@ -39,4 +41,6 @@ export class ThyCascaderOptionComponent implements OnInit {
     }
 
     ngOnInit() {}
+
+    select() {}
 }
