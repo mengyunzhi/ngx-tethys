@@ -1,7 +1,7 @@
 import { ThyAbstractOverlayContainer } from 'ngx-tethys/core';
 import { helpers } from 'ngx-tethys/util';
-import { Observable, Subject } from 'rxjs';
-import { filter, startWith, takeUntil } from 'rxjs/operators';
+import { Observable, Subject, fromEvent } from 'rxjs';
+import { filter, startWith, takeUntil, debounceTime } from 'rxjs/operators';
 
 import { AnimationEvent } from '@angular/animations';
 import { ViewportRuler } from '@angular/cdk/overlay';
@@ -84,6 +84,8 @@ export class ThySlideContainerComponent extends ThyAbstractOverlayContainer impl
         }
     }
 
+    private destroy$ = new Subject<void>();
+
     private get drawerContainerElementClass() {
         return `thy-slide-${this.config.mode}-drawer-container`;
     }
@@ -110,6 +112,12 @@ export class ThySlideContainerComponent extends ThyAbstractOverlayContainer impl
         this.setDrawerContainerElement();
         this.checkContainerWithinViewport();
         this.addDrawerContainerElementClass();
+
+        fromEvent(window, 'resize')
+            .pipe(debounceTime(100), takeUntil(this.destroy$))
+            .subscribe(() => {
+                this.setSlideContainerStyles();
+            });
     }
 
     private setDrawerContainerElement() {
